@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script type="module" src="server.js"></script>
+    <title>IoT Dashboard</title>
+</head>
+<body>
+        <nav  class="navbar">
+            <div class="container">
+                <div class="logo">IoT Dashboard</div>
+            </div>
+        </nav> 
+    <header class="header">
+        <div class="container">
+            <img src="./images/FOCOON.PNG" alt="" class="menu-toggle">
+            <div>
+                <h1>Luces automáticas con interfaz de usuario para IoT</h1>
+                <p>
+                    Este es un proyecto de Sistemas Embebidos
+                </p>
+            </div>
+        </div>
+    </header>
+
+    <section class="boxes">
+        <!-- parte de david -->
+    <div class="container">
+        <nav class="menu">
+          <ul>
+            <li>
+              <h3>SENSOR RFID</h3>
+              <label class="switch">
+                <input type="checkbox" id="toggle1">
+                <span class="slider"></span>
+              </label>
+            </li>
+            <li>
+              <h3>SENSOR MQ-2</h3>
+              <label class="switch">
+                <input type="checkbox" id="toggle2">
+                <span class="slider"></span>
+              </label>
+            </li>
+            <li>
+              <h3>SENSOR PIR</h3>
+              <label class="switch">
+                <input type="checkbox" id="toggle3">
+                <span class="slider"></span>
+              </label>
+            </li>
+            <li>
+              <h3>SENSOR HEARTBEAT</h3>
+              <label class="switch">
+                <input type="checkbox" id="toggle4">
+                <span class="slider"></span>
+              </label>
+            </li>
+          </ul>
+        </nav>
+      </div>
+    <!-- parte fin de david -->
+
+        <div class="container">
+            <div class="box">
+                <h2>Sensor de Ritmo Cardíaco</h2>
+                <div class="container mt-5" id="grafico-hr"> 
+                    <div class="card">
+                        <!-- <div class="card-header">Chart</div> -->
+                        <div class="card-body">
+                            <div class="col-12 mx-auto">
+                                <canvas id="myChart"></canvas>      
+                            </div>
+                        </div>
+                    </div>      
+                </div>
+            </div>
+            <div class="box">
+                <h2>Sensor de Gas MQ-2</h2>
+                <div id="chartdiv"></div>
+            </div>
+            <div class="box">
+                <h2> <i class="fas fa-arrows-alt-v"></i>
+                Sensor de Movimiento (PIR) </h2>
+                <div id="progress-bar"></div>
+            </div>
+            <div class="box">
+                <h2> <i class="fas fa-arrows-alt-v"></i>
+                Sensor RFID </h2>
+                <div class="imgcentrar">
+                    <img id="image" src="./images/puertasCerradas.png" onclick="toggleElement()" />
+                  </div>
+                  <div id="chatBox" class="chatcito"></div>
+            </div>
+
+        </div>
+        <div id="messages"></div>
+    </section>
+        
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+        <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+        <script src="https://cdn.amcharts.com/lib/5/xy.js"></script>
+        <script src="https://cdn.amcharts.com/lib/5/radar.js"></script>
+        <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+        <script src="charts.js"></script>
+        <script src="apexjs.js"></script>
+    <script>
+      let now = new Date();
+        var data={
+            labels:[now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds()],
+            datasets:[
+                {
+                    label: 'Pulso Cardiaco',
+                    data:[10,20,30,50,30,40],
+                    borderColor:'rgb(189,195,199)',
+                    lineTension: 0.1
+                }
+            ]
+        };
+        var config={
+            type:'line',
+            data:data,
+        };
+
+        var myChart =  new Chart(
+            document.getElementById('myChart'),
+            config
+        )
+        
+        window.setInterval(mycallback,2000);
+
+        function mycallback(lecturaCardiaco){
+            let now = new Date();
+            now = now.getHours() + ":" + now.getMinutes() + ":" + now.getSeconds();
+            //el valor se va a sustitur por la propiedad json del latido
+            let value = lecturaCardiaco;
+            if(data.datasets[0].data.length >=20){
+                data.labels.shift();
+                data.datasets[0].data.shift();
+            }
+            data.labels.push(now);
+            data.datasets[0].data.push(value);
+            myChart.update();
+        }
+
+        let state = false;
+
+        function toggleElement() {
+            var chatBox = document.getElementById("chatBox");
+            state = !state;
+            var image = document.getElementById("image");
+
+            if(state){
+                image.src='./images/puertasAbiertas.png';
+                chatBox.innerHTML = "Hola, usuario tal...";
+                
+            }
+            else{
+                image.src='./images/puertasCerradas.png';
+                chatBox.innerHTML = "Adiós, usuario.";
+
+            }
+}
+
+function printText() {
+  var chatBox = document.getElementById("chatBox");
+  var inputText = document.getElementById("inputText").value;
+
+  chatBox.innerHTML += "<p>" + inputText + "</p>";
+  // Línea opcional para limpiar el campo de texto después de imprimirlo
+  document.getElementById("inputText").value = "";
+}
+    </script>
+
+    <script>
+      // Crea una nueva instancia de WebSocket
+const socket = new WebSocket('ws://localhost:8080');
+
+// Evento de conexión establecida
+socket.onopen = function(event) {
+console.log('Conexión establecida');
+};
+
+let iotResponse = {
+"pir" : false,
+"rfid" : false,
+"humo" : false,
+"cardiaco": false
+}
+
+//Enender y Apagar RFID
+let toggleRFID = document.getElementById('toggle1');
+let rfidEncendido = false;
+toggleRFID.addEventListener('click', ()=>{
+if(rfidEncendido){
+console.log("RFID Apagado");
+toggleRFID.setAttribute("checked","false");
+rfidEncendido = false;
+iotResponse.rfid = false
+} else{
+console.log("RFID Encendido");
+rfidEncendido = true;
+iotResponse.rfid = true;
+toggleRFID.setAttribute("checked","false");
+}
+socket.send(JSON.stringify(iotResponse));
+})
+
+//Enender y Apagar MQ2
+let toggleMQ2 = document.getElementById('toggle2');
+let mq2Encendido = false;
+toggleMQ2.addEventListener('click', ()=>{
+if(mq2Encendido){
+console.log("AQ2 Apagado");
+toggleMQ2.setAttribute("checked","false");
+mq2Encendido = false;
+iotResponse.humo = false;
+} else{
+console.log("MQ2 Encendido");
+mq2Encendido = true;
+iotResponse.humo = true;
+toggleMQ2.setAttribute("checked","true");
+}
+
+socket.send(JSON.stringify(iotResponse));
+})
+
+//Enender y Apagar PIR
+let togglePIR = document.getElementById('toggle3');
+let pirEncendido = false;
+togglePIR.addEventListener('click', ()=>{
+if(pirEncendido){
+console.log("PIR Apagado");
+pirEncendido = false;
+iotResponse.pir = false;
+togglePIR.setAttribute("checked","false");
+} else{
+console.log("PIR Encendido");
+pirEncendido = true;
+iotResponse.pir = true;
+togglePIR.setAttribute("checked","true");
+}
+
+socket.send(JSON.stringify(iotResponse));
+})
+
+//Enender y Apagar Heartbeat sensor
+let toggleHeart = document.getElementById('toggle4');
+let heartEncendido = false;
+toggleHeart.addEventListener('click', (responder)=>{
+if(heartEncendido){
+console.log("Heartbeat Apagado");
+toggleHeart.setAttribute("checked","false");
+heartEncendido = false;
+iotResponse.cardiaco = false;
+} else{
+console.log("Heartbeat Encendido");
+toggleHeart.setAttribute("checked","true");
+heartEncendido = true;
+iotResponse.cardiaco = true;
+}
+
+socket.send(JSON.stringify(iotResponse));
+})
+
+// Evento de mensaje recibido
+
+socket.onmessage = function(event) {
+let message = JSON.parse(event.data);
+let pir = message.sensors.pir;
+let humo = message.sensors.humo;
+let cardiaco = message.sensors.cardiaco;
+let rfid = message.sensors.rfid;
+
+console.log("valor del pir: " + pir);
+console.log("valor del humo: " + humo);
+console.log("valor del cardiaco: " + cardiaco);
+console.log("valor del rfid: " + rfid);
+//Lo muestra en el front  
+if(cardiaco == undefined){
+  cardiaco = 0;
+}
+
+if(pir == undefined){
+  pir = false;
+}
+
+if(humo == undefined){
+  humo = 0;
+}
+
+if(rfid == undefined){
+  rfid = false;
+}
+
+  mycallback(cardiaco);
+  setSmoke(humo);
+  setValue(pir);
+if(rfid){
+  toggleElement();
+}
+
+responsiveToggle(rfid, pir, humo, cardiaco);
+};
+
+function responsiveToggle(rfid, pir, humo, cardiaco){
+  let showRFID = document.getElementById("toggle1");
+  let showPIR = document.getElementById("toggle3");
+  let showHumo = document.getElementById("toggle2");
+  let showCardiaco = document.getElementById("toggle4");
+
+  if(rfid){
+    showRFID.setAttribute("checked","true");
+    showRFID.active();
+  } else{
+    showRFID.setAttribute("checked","false");
+  }
+
+  if(pir){
+    showPIR.setAttribute("checked","true");
+  } else{
+    showPIR.setAttribute("checked","false");
+  }
+
+  if(humo > 700){
+    showHumo.setAttribute("checked","true");
+  } else{
+    showHumo.setAttribute("checked","false");
+  }
+
+  if(cardiaco > 30){
+    showCardiaco.setAttribute("checked","true");
+  } else{
+    showCardiaco.setAttribute("checked","false");
+  }
+}
+
+// Evento de error
+socket.onerror = function(error) {
+console.error('Error en la conexión:', error);
+};
+
+// Evento de cierre de conexión
+socket.onclose = function(event) {
+console.log('Conexión cerrada');
+};
+  </script>
+</body>
+</html>
