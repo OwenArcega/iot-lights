@@ -44,15 +44,15 @@ mongoose.connect(dbUrl, { useNewUrlParser: true, useUnifiedTopology: true })
             let mensaje = JSON.parse(message);
             console.log(`Mensaje recibido en el topic ${topic}: ${JSON.parse(message)}`)
 
-            let documento = new DatosModel({
-              pir: mensaje.pir,
-              humo: mensaje.humo,
-              rfid: mensaje.rfid,
-              cardiaco: mensaje.cardiaco
+            var documento = new DatosModel({
+              pir: mensaje.sensors.pir,
+              humo: mensaje.sensors.humo,
+              rfid: mensaje.sensors.rfid,
+              cardiaco: mensaje.sensors.cardiaco
             })
-
+            
             setInterval(()=>{
-              document.save();
+              documento.save();
             }, 10000);
 
             ws.send(JSON.stringify(mensaje));

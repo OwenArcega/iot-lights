@@ -1,4 +1,4 @@
-#define USE_ARDUINO_INTERRUPTS false    // Prepara interruptores de bajo nivel para leturas mas precisas.
+#define USE_ARDUINO_INTERRUPTS false    
 
 ///////////////////////////////////////////////////////////////////JSON/////////////////////////////////////////////////////////////////////////
 #include <ArduinoJson.h>
@@ -275,6 +275,8 @@ sensoresActuadores activador; // Crea el objeto de la clase sensoresActuadores
 ////////////////////////////////////////////////////////////////LOOP///////////////////////////////////////////////////////////////////////////////////////////////////
 //---------------------------------------------------------------------------------------------------------------------------------------------------------
 
+bool pirEstado = false;
+bool rfidEstado = false;
 long int lecturaCardiaco = 0;
 unsigned long lastMessage = 0;
 void loop() {
@@ -294,25 +296,33 @@ void loop() {
   ////////////////////////////////////////////////////////////////RFID////////////////////////////////////////////////////////////////////////////////////////////////
   
   // Verifica si hay una tarjeta RFID cerca
-  if (mfrc522.PICC_IsNewCardPresent()) {
+  if (mfrc522.PICC_IsNewCardPresent() && mfrc522.PICC_ReadCardSerial()) {
     Serial.print("Tarjeta RFID detectada");
-    digitalWrite(relevadorRFID, HIGH);
-    sensors["rfid"] = true;
-    // Realiza aquí las acciones necesarias con la tarjeta leída
+    if(rfidEstado){
+      digitalWrite(relevadorRFID, LOW);
+      Serial.println("Se desactivo el rfid");
+      rfidEstado = false;
+    } else{
+      Serial.println("Se activo el rfid");
+      digitalWrite(relevadorRFID, HIGH);
+      rfidEstado = true;
+    }
 
     mfrc522.PICC_HaltA(); // Termina la comunicación con la tarjeta RFID
-  } else{
-    digitalWrite(relevadorRFID, LOW);
+  } 
+
+  if(rfidEstado){
+    sensors["rfid"] = true;
+  }else{
     sensors["rfid"] = false;
   }
-  
   /////////////////////////////////////////////////////////////////////////////Sensor de Corazon//////////////////////////////////////////////////////////////////////////
   if(pulseSensor.sawNewSample()){      
     lecturaCardiaco = analogRead(sensorCardiaco) / 60;
     Serial.print(lecturaCardiaco);
     Serial.println(" BPM");
     sensors["cardiaco"] = lecturaCardiaco;
-    if(lecturaCardiaco >= 30){
+    if(lecturaCardiaco >= 40){
       Serial.println("Sucedio un pulso cardiaco");
       digitalWrite(relevadorCardiaco, HIGH);
     } else{
@@ -322,15 +332,22 @@ void loop() {
 
   ////////////////////////////////////////////////////////PIR//////////////////////////////////////////////////////////////////////////////////////////////////////////
   
-  //sensors["pir"] = activador.activarRelevadorPIR(relevadorPIR, PIR);           // Mandamos a llamar al método para activar el relevador del PIR
   if(digitalRead(PIR)){
     Serial.println("Movimiento");
-    sensors["pir"] = true;  
-  } else{
-    Serial.println("Sin movimiento");
-    sensors["pir"] = false;
+    if(pirEstado){
+      digitalWrite(relevadorPIR, LOW);
+      pirEstado = false;
+    } else{
+      digitalWrite(relevadorPIR, HIGH);
+      pirEstado = true;
+    }
   }
 
+  if(pirEstado){
+    sensors["pir"] = true;
+  } else{
+    sensors["pir"] = false;
+  }
   
   //////////////////////////////////////////////////////////////////Humo////////////////////////////////////////////////////////////////////////////////////////////
    flameValue = analogRead(sensorHumo); // Leer el valor analógico del sensor

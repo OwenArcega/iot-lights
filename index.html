@@ -91,7 +91,7 @@
                 <h2> <i class="fas fa-arrows-alt-v"></i>
                 Sensor RFID </h2>
                 <div class="imgcentrar">
-                    <img id="image" src="./images/puertasCerradas.png" onclick="toggleElement()" />
+                    <img id="image" src="./images/puertasCerradas.png" />
                   </div>
                   <div id="chatBox" class="chatcito"></div>
             </div>
@@ -123,7 +123,7 @@
             ]
         };
         var config={
-            type:'line',
+            type:'bar',
             data:data,
         };
 
@@ -158,12 +158,10 @@
             if(state){
                 image.src='./images/puertasAbiertas.png';
                 chatBox.innerHTML = "Hola, usuario tal...";
-                
             }
             else{
                 image.src='./images/puertasCerradas.png';
                 chatBox.innerHTML = "Adiós, usuario.";
-
             }
 }
 
@@ -199,14 +197,14 @@ let rfidEncendido = false;
 toggleRFID.addEventListener('click', ()=>{
 if(rfidEncendido){
 console.log("RFID Apagado");
-toggleRFID.setAttribute("checked","false");
+toggleRFID.removeAttribute("checked");
 rfidEncendido = false;
 iotResponse.rfid = false
 } else{
 console.log("RFID Encendido");
 rfidEncendido = true;
 iotResponse.rfid = true;
-toggleRFID.setAttribute("checked","false");
+toggleRFID.setAttribute("checked","");
 }
 socket.send(JSON.stringify(iotResponse));
 })
@@ -217,14 +215,14 @@ let mq2Encendido = false;
 toggleMQ2.addEventListener('click', ()=>{
 if(mq2Encendido){
 console.log("AQ2 Apagado");
-toggleMQ2.setAttribute("checked","false");
+toggleMQ2.removeAttribute("checked");
 mq2Encendido = false;
 iotResponse.humo = false;
 } else{
 console.log("MQ2 Encendido");
 mq2Encendido = true;
 iotResponse.humo = true;
-toggleMQ2.setAttribute("checked","true");
+toggleMQ2.setAttribute("checked","");
 }
 
 socket.send(JSON.stringify(iotResponse));
@@ -236,14 +234,16 @@ let pirEncendido = false;
 togglePIR.addEventListener('click', ()=>{
 if(pirEncendido){
 console.log("PIR Apagado");
+console.log(togglePIR);
 pirEncendido = false;
 iotResponse.pir = false;
-togglePIR.setAttribute("checked","false");
+togglePIR.removeAttribute("checked");
 } else{
 console.log("PIR Encendido");
+console.log(togglePIR);
 pirEncendido = true;
 iotResponse.pir = true;
-togglePIR.setAttribute("checked","true");
+togglePIR.setAttribute("checked","");
 }
 
 socket.send(JSON.stringify(iotResponse));
@@ -255,12 +255,12 @@ let heartEncendido = false;
 toggleHeart.addEventListener('click', (responder)=>{
 if(heartEncendido){
 console.log("Heartbeat Apagado");
-toggleHeart.setAttribute("checked","false");
+toggleHeart.removeAttribute("checked");
 heartEncendido = false;
 iotResponse.cardiaco = false;
 } else{
 console.log("Heartbeat Encendido");
-toggleHeart.setAttribute("checked","true");
+toggleHeart.setAttribute("checked","");
 heartEncendido = true;
 iotResponse.cardiaco = true;
 }
@@ -277,10 +277,6 @@ let humo = message.sensors.humo;
 let cardiaco = message.sensors.cardiaco;
 let rfid = message.sensors.rfid;
 
-console.log("valor del pir: " + pir);
-console.log("valor del humo: " + humo);
-console.log("valor del cardiaco: " + cardiaco);
-console.log("valor del rfid: " + rfid);
 //Lo muestra en el front  
 if(cardiaco == undefined){
   cardiaco = 0;
@@ -298,8 +294,12 @@ if(rfid == undefined){
   rfid = false;
 }
 
-  mycallback(cardiaco);
-  setSmoke(humo);
+console.log("valor del pir: " + pir);
+console.log("valor del humo: " + humo);
+console.log("valor del cardiaco: " + cardiaco);
+console.log("valor del rfid: " + rfid);
+mycallback(cardiaco);
+setSmoke(humo);
   setValue(pir);
 if(rfid){
   toggleElement();
@@ -315,28 +315,27 @@ function responsiveToggle(rfid, pir, humo, cardiaco){
   let showCardiaco = document.getElementById("toggle4");
 
   if(rfid){
-    showRFID.setAttribute("checked","true");
-    showRFID.active();
+    showRFID.setAttribute("checked","");
   } else{
-    showRFID.setAttribute("checked","false");
+    showRFID.removeAttribute("checked");
   }
 
   if(pir){
-    showPIR.setAttribute("checked","true");
+    showPIR.setAttribute("checked","");
   } else{
-    showPIR.setAttribute("checked","false");
+    showPIR.removeAttribute("checked");
   }
 
   if(humo > 700){
-    showHumo.setAttribute("checked","true");
+    showHumo.setAttribute("checked","");
   } else{
-    showHumo.setAttribute("checked","false");
+    showHumo.removeAttribute("checked");
   }
 
-  if(cardiaco > 30){
-    showCardiaco.setAttribute("checked","true");
+  if(cardiaco > 45){
+    showCardiaco.setAttribute("checked","");
   } else{
-    showCardiaco.setAttribute("checked","false");
+    showCardiaco.removeAttribute("checked");
   }
 }
 
